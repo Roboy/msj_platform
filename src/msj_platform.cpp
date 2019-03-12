@@ -31,17 +31,18 @@ MSJPlatform::MSJPlatform(int32_t *msj_platform_base, int32_t *switch_base, vecto
         MSJ_WRITE_outputPosMax(msj_platform_base,i,(zero_speed[i]+30));
         MSJ_WRITE_outputNegMax(msj_platform_base,i,(zero_speed[i]-30));
 
-        MSJ_WRITE_Kp(msj_platform_base,i,8);
-        MSJ_WRITE_Ki(msj_platform_base,i,0);
-        MSJ_WRITE_integralPosMax(msj_platform_base,i,100);
-        MSJ_WRITE_integralNegMax(msj_platform_base,i,-100);
+        MSJ_WRITE_Kp(msj_platform_base,i,1);
+        MSJ_WRITE_Ki(msj_platform_base,i,1000);
+        MSJ_WRITE_integralPosMax(msj_platform_base,i,100000);
+        MSJ_WRITE_integralNegMax(msj_platform_base,i,-100000);
         MSJ_WRITE_Kd(msj_platform_base,i,0);
 
-        MSJ_WRITE_outputDivider(msj_platform_base,i,9);
+        MSJ_WRITE_outputDivider(msj_platform_base,i,5);
         MSJ_WRITE_deadBand(msj_platform_base,i,0);
         MSJ_WRITE_control_mode(msj_platform_base,i,0);
         MSJ_WRITE_sp(msj_platform_base,i,0);
     }
+    MSJ_WRITE_sensor_update_freq(msj_platform_base, 1000);
     MSJ_WRITE_pwm_mute(msj_platform_base,false);
 
     status_thread = boost::shared_ptr<std::thread>( new std::thread(&MSJPlatform::publishStatus, this));
@@ -151,9 +152,6 @@ bool MSJPlatform::EmergencyStop(std_srvs::SetBool::Request &req, std_srvs::SetBo
 
 bool MSJPlatform::Zero(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res){
     MSJ_WRITE_reset_control(msj_platform_base,true);
-    for(int i=0;i<NUMBER_OF_MOTORS;i++) {
-        MSJ_WRITE_sp(msj_platform_base, i, 0);
-    }
     return true;
 }
 

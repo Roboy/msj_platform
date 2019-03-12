@@ -72,6 +72,7 @@
 #define MSJ_WRITE_deadBand(base, motor, data) IOWR(base, (uint32_t)(0x0B<<8|motor&0xff), data )
 #define MSJ_WRITE_zero_speed(base, motor, data) IOWR(base, (uint32_t)(0x0C<<8|motor&0xff), data )
 #define MSJ_WRITE_pwm_mute(base, data) IOWR(base, (uint32_t)(0x0D<<8|0), data )
+#define MSJ_WRITE_sensor_update_freq(base, data) IOWR(base, (uint32_t)(0x0E<<8|0), data )
 
 #include <stdio.h>
 #include <unistd.h>

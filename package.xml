@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>msj_platform</name>
+  <version>0.0.0</version>
+  <description>msj platform control</description>
+  <maintainer email="simon.trendel@tum.de">Simon Trendel</maintainer>
+  <license>BSD</license>
+  <buildtool_depend>catkin</buildtool_depend>
+  <depend>roscpp</depend>
+  <depend>rospy</depend>
+  <depend>std_msgs</depend>
+  <depend>message_generation</depend>
+  <depend>message_runtime</depend>
+  <depend>communication</depend>
+  <depend>roboy_middleware_msgs</depend>
+  <depend>roboy_control_msgs</depend>
+  <depend>common_utilities</depend>
+
+  <!-- The export tag contains other, unspecified, tags -->
+  <export>
+    <!-- Other tools can request additional information be placed here -->
+
+  </export>
+</package>

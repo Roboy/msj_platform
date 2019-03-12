@@ -32,9 +32,9 @@ MSJPlatform::MSJPlatform(int32_t *msj_platform_base, int32_t *switch_base, vecto
         MSJ_WRITE_outputNegMax(msj_platform_base,i,(zero_speed[i]-30));
 
         MSJ_WRITE_Kp(msj_platform_base,i,1);
-        MSJ_WRITE_Ki(msj_platform_base,i,1000);
-        MSJ_WRITE_integralPosMax(msj_platform_base,i,100000);
-        MSJ_WRITE_integralNegMax(msj_platform_base,i,-100000);
+        MSJ_WRITE_Ki(msj_platform_base,i,0);
+        MSJ_WRITE_integralPosMax(msj_platform_base,i,0);
+        MSJ_WRITE_integralNegMax(msj_platform_base,i,0);
         MSJ_WRITE_Kd(msj_platform_base,i,0);
 
         MSJ_WRITE_outputDivider(msj_platform_base,i,5);

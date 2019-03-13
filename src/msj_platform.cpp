@@ -28,8 +28,8 @@ MSJPlatform::MSJPlatform(int32_t *msj_platform_base, int32_t *switch_base, vecto
 
     for(int i=0;i<NUMBER_OF_MOTORS;i++){
         MSJ_WRITE_zero_speed(msj_platform_base,i,zero_speed[i]);
-        MSJ_WRITE_outputPosMax(msj_platform_base,i,(zero_speed[i]+30));
-        MSJ_WRITE_outputNegMax(msj_platform_base,i,(zero_speed[i]-30));
+        MSJ_WRITE_outputPosMax(msj_platform_base,i,(zero_speed[i]+20));
+        MSJ_WRITE_outputNegMax(msj_platform_base,i,(zero_speed[i]-20));
 
         MSJ_WRITE_Kp(msj_platform_base,i,1);
         MSJ_WRITE_Ki(msj_platform_base,i,0);
@@ -37,7 +37,7 @@ MSJPlatform::MSJPlatform(int32_t *msj_platform_base, int32_t *switch_base, vecto
         MSJ_WRITE_integralNegMax(msj_platform_base,i,0);
         MSJ_WRITE_Kd(msj_platform_base,i,0);
 
-        MSJ_WRITE_outputDivider(msj_platform_base,i,5);
+        MSJ_WRITE_outputDivider(msj_platform_base,i,40);
         MSJ_WRITE_deadBand(msj_platform_base,i,0);
         MSJ_WRITE_control_mode(msj_platform_base,i,0);
         MSJ_WRITE_sp(msj_platform_base,i,0);
@@ -80,6 +80,7 @@ void MSJPlatform::publishStatus(){
     msg.angle.resize(NUMBER_OF_MOTORS);
     while(ros::ok()){
         msg.power_sense = !(IORD(switch_base,0)&0x1);
+//        stringstream str;
         for(int i=0; i<NUMBER_OF_MOTORS; i++){
             int32_t pwm = MSJ_READ_dutys(msj_platform_base,i);
             int32_t angle = MSJ_READ_sensor_angle_absolute(msj_platform_base,i);
@@ -91,7 +92,9 @@ void MSJPlatform::publishStatus(){
             msg.current[i] = 0;
             msg.displacement[i] = 0;
             msg.angle[i] = angle;
+//            str << (int32_t)MSJ_READ_sp(msj_platform_base,i) << "\t";
         }
+//        ROS_INFO_STREAM_THROTTLE(1,str.str());
         motor_status.publish(msg);
         r.sleep();
 //        stringstream str;

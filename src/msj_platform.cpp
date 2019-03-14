@@ -48,12 +48,12 @@ MSJPlatform::MSJPlatform(int32_t *msj_platform_base, int32_t *switch_base, vecto
     status_thread = boost::shared_ptr<std::thread>( new std::thread(&MSJPlatform::publishStatus, this));
     status_thread->detach();
 
-//    for(int i=0;i<i2c_base.size();i++){
-//        tlv.push_back(boost::shared_ptr<TLV493D>(new TLV493D(i2c_base[i])));
-//    }
-//
-//    magnetic_thread = boost::shared_ptr<std::thread>( new std::thread(&MSJPlatform::publishMagneticSensors, this));
-//    magnetic_thread->detach();
+    for(int i=0;i<i2c_base.size();i++){
+        tlv.push_back(boost::shared_ptr<TLV493D>(new TLV493D(i2c_base[i])));
+    }
+
+    magnetic_thread = boost::shared_ptr<std::thread>( new std::thread(&MSJPlatform::publishMagneticSensors, this));
+    magnetic_thread->detach();
 
 //    darkroom_pub = nh->advertise<roboy_middleware_msgs::DarkRoom>("/roboy/middleware/DarkRoom/sensors",
 //                                                                  1);
@@ -119,8 +119,9 @@ void MSJPlatform::publishMagneticSensors() {
         float fx,fy,fz;
         for(int i=0;i<tlv.size();i++){
             bool success = tlv[i]->read(fx,fy,fz);
-            if(success) {
+            if(!success) {
                 ROS_WARN_THROTTLE(5,"oh oh, magnetic sensor values invalid");
+                tlv[i]->reset();
             }
             msg.sensor_id.push_back(i);
             msg.x.push_back(fx);

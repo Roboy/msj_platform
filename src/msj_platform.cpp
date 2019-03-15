@@ -39,8 +39,8 @@ MSJPlatform::MSJPlatform(int32_t *msj_platform_base, int32_t *switch_base, vecto
 
         MSJ_WRITE_outputDivider(msj_platform_base,i,40);
         MSJ_WRITE_deadBand(msj_platform_base,i,0);
-        MSJ_WRITE_control_mode(msj_platform_base,i,0);
-        MSJ_WRITE_sp(msj_platform_base,i,0);
+        MSJ_WRITE_control_mode(msj_platform_base,i,2);
+        MSJ_WRITE_sp(msj_platform_base,i,zero_speed[i]);
     }
     MSJ_WRITE_sensor_update_freq(msj_platform_base, 1000);
     MSJ_WRITE_pwm_mute(msj_platform_base,false);
@@ -55,6 +55,11 @@ MSJPlatform::MSJPlatform(int32_t *msj_platform_base, int32_t *switch_base, vecto
     magnetic_thread = boost::shared_ptr<std::thread>( new std::thread(&MSJPlatform::publishMagneticSensors, this));
     magnetic_thread->detach();
 
+    pid_control_thread = boost::shared_ptr<std::thread>( new std::thread(&MSJPlatform::PIDController, this));
+    pid_control_thread->detach();
+
+    //TODO: add PID controller parameters service
+
 //    darkroom_pub = nh->advertise<roboy_middleware_msgs::DarkRoom>("/roboy/middleware/DarkRoom/sensors",
 //                                                                  1);
 //    darkroom_ootx_pub = nh->advertise<roboy_middleware_msgs::DarkRoomOOTX>(
@@ -66,6 +71,13 @@ MSJPlatform::MSJPlatform(int32_t *msj_platform_base, int32_t *switch_base, vecto
 //    darkroom_ootx_thread = boost::shared_ptr<std::thread>(
 //            new std::thread(&MSJPlatform::darkRoomOOTXPublisher, this));
 //    darkroom_ootx_thread->detach();
+}
+
+MSJPlatform::~MSJPlatform(){
+    ROS_INFO("returning control to fpga");
+    for(int i=0; i<NUMBER_OF_MOTORS; i++){
+        MSJ_WRITE_control_mode(msj_platform_base,i,0);
+    }
 }
 
 void MSJPlatform::publishStatus(){
@@ -133,15 +145,51 @@ void MSJPlatform::publishMagneticSensors() {
     }
 }
 
+void MSJPlatform::PIDController(){
+    ros::Rate rate(200);
+    int32_t pos[NUMBER_OF_MOTORS];
+    float err[NUMBER_OF_MOTORS], err_prev[NUMBER_OF_MOTORS] = {0}, result[NUMBER_OF_MOTORS];
+    while (ros::ok()) {
+        for(int i=0;i<NUMBER_OF_MOTORS;i++){
+            pos[i] = MSJ_READ_sensor_angle_absolute(msj_platform_base,i);
+            err[i] = sp[i]-pos[i];
+            integral[i] += Ki*err[i];
+            if(integral[i]>integralMax)
+                integral[i] = integralMax;
+            if(integral[i]<-integralMax)
+                integral[i] = -integralMax;
+            result[i] = Kp*err[i] + Kd*(err_prev[i]-err[i]) + integral[i];
+            if(result[i]>zero_speed[i]+30)
+                result[i] = zero_speed[i]+30;
+            else if(result[i]<zero_speed[i]-30)
+                result[i] = zero_speed[i]-30;
+            MSJ_WRITE_sp(msj_platform_base, i, (int) result[i]);
+        }
+        rate.sleep();
+    }
+}
+
+bool MSJPlatform::setControllerParameters( roboy_control_msgs::SetControllerParameters::Request &req,
+                              roboy_control_msgs::SetControllerParameters::Response &res){
+    Kp = req.kp;
+    Kd = req.kd;
+    res.success = true;
+    return true;
+}
+
 void MSJPlatform::MotorCommand(const roboy_middleware_msgs::MotorCommandConstPtr &msg){
     if(msg->id!=5) { // not for me
         ROS_INFO_THROTTLE(60,"receiving motor commands, but they are not for me (id=5)");
         return;
     }
     for(int i=0;i<msg->motors.size();i++) {
+        if(control_mode[i]!=2) {
 //        MSJ_WRITE_control_mode(msj_platform_base, msg->motors[i], 2);
-        MSJ_WRITE_sp(msj_platform_base, msg->motors[i], (int)msg->set_points[i]);
+            MSJ_WRITE_sp(msj_platform_base, msg->motors[i], (int) msg->set_points[i]);
 //        ROS_INFO_STREAM("motor " << msg->motors[i] << " " << msg->set_points[i]);
+        }else{
+            sp[i] = (int) msg->set_points[i];
+        }
     }
 }
 

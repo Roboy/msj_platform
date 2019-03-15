@@ -84,6 +84,7 @@
 #include "socal/hps.h"
 #include "msj_platform/hps_0.h"
 #include <ros/ros.h>
+#include <roboy_control_msgs/SetControllerParameters.h>
 #include <roboy_middleware_msgs/DarkRoom.h>
 #include <roboy_middleware_msgs/DarkRoomOOTX.h>
 #include <roboy_middleware_msgs/DarkRoomStatus.h>
@@ -112,8 +113,12 @@ using half_float::half;
 class MSJPlatform{
 public:
     MSJPlatform(int32_t *msj_platform_base, int32_t *switch_base, vector<int32_t*> i2c_base, int32_t* darkroom_base, int32_t* darkroom_base_ootx);
+    ~MSJPlatform();
     void publishStatus();
     void publishMagneticSensors();
+    void PIDController();
+    bool setControllerParameters( roboy_control_msgs::SetControllerParameters::Request &req,
+                                               roboy_control_msgs::SetControllerParameters::Response &res);
     void MotorCommand(const roboy_middleware_msgs::MotorCommandConstPtr &msg);
     bool EmergencyStop(std_srvs::SetBool::Request &req, std_srvs::SetBool::Response &res);
     bool Zero(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res);
@@ -157,10 +162,13 @@ private:
     ros::ServiceServer emergency_stop, zero;
     boost::shared_ptr<ros::AsyncSpinner> spinner;
     int32_t *msj_platform_base, *switch_base, *darkroom_base, *darkroom_ootx_base;
-    boost::shared_ptr<std::thread> status_thread, magnetic_thread, darkroom_thread, darkroom_ootx_thread;
+    boost::shared_ptr<std::thread> status_thread, magnetic_thread, pid_control_thread, darkroom_thread, darkroom_ootx_thread;
     vector<int32_t> zero_speed = {330,330,330,330,330,330,330,330};
     vector<boost::shared_ptr<TLV493D>> tlv;
     vector<int32_t*> i2c_base;
+    int control_mode[NUMBER_OF_MOTORS] = {2};
+    int sp[NUMBER_OF_MOTORS] = {0};
+    float Kp = 0.01, Kd = 0, Ki = 0, integralMax = 1000, integral[NUMBER_OF_MOTORS] = {0};
     union {
         uint8_t data[33];
         struct {

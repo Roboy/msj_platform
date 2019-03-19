@@ -89,6 +89,10 @@ public:
 	 * @return true if at least one active device was found
 	 */
 	bool checkAddressSpace(uint8_t fromDeviceID, uint8_t toDeviceID, vector<uint8_t> &activeDevices);
+	/**
+	 * Runs a custom reset sequence for the tlv493 chip
+	 */
+	void resetTLV();
 private:
 	void * h2p_lw_i2c_addr;
 
@@ -103,6 +107,7 @@ public:
 	// registers: only write
 	const uint8_t GPIO_CONTROL = 5;
 	const uint8_t READ_ONLY = 6;
+	const uint8_t RESET_TLV = 7;
 
 	// registers: only read
 	const uint8_t BUSY = 4;

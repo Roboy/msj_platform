@@ -435,16 +435,16 @@ int main(int argc, char *argv[]) {
 #else
     h2p_lw_msj_platform = nullptr;
 #endif
-#ifdef I2C_1_BASE
-    h2p_lw_i2c.push_back((int32_t*)(virtual_base + ( ( unsigned long  )( ALT_LWFPGASLVS_OFST + I2C_1_BASE ) & ( unsigned long)( HW_REGS_MASK )) ));
-#else
-    h2p_lw_msj_platform = nullptr;
-#endif
-#ifdef I2C_2_BASE
-    h2p_lw_i2c.push_back((int32_t*)(virtual_base + ( ( unsigned long  )( ALT_LWFPGASLVS_OFST + I2C_2_BASE ) & ( unsigned long)( HW_REGS_MASK )) ));
-#else
-    h2p_lw_msj_platform = nullptr;
-#endif
+//#ifdef I2C_1_BASE
+//    h2p_lw_i2c.push_back((int32_t*)(virtual_base + ( ( unsigned long  )( ALT_LWFPGASLVS_OFST + I2C_1_BASE ) & ( unsigned long)( HW_REGS_MASK )) ));
+//#else
+//    h2p_lw_msj_platform = nullptr;
+//#endif
+//#ifdef I2C_2_BASE
+//    h2p_lw_i2c.push_back((int32_t*)(virtual_base + ( ( unsigned long  )( ALT_LWFPGASLVS_OFST + I2C_2_BASE ) & ( unsigned long)( HW_REGS_MASK )) ));
+//#else
+//    h2p_lw_msj_platform = nullptr;
+//#endif
 #ifdef DARKROOM_0_BASE
     h2p_lw_darkroom = (int32_t*)(virtual_base + ( ( unsigned long  )( ALT_LWFPGASLVS_OFST + DARKROOM_0_BASE ) & ( unsigned long)( HW_REGS_MASK )) );
 #else
@@ -456,7 +456,26 @@ int main(int argc, char *argv[]) {
     h2p_lw_darkroom_ootx = nullptr;
 #endif
 
-    MSJPlatform msjPlatform(h2p_lw_msj_platform, h2p_lw_switches_addr, h2p_lw_i2c, h2p_lw_darkroom, h2p_lw_darkroom_ootx);
+//    MSJPlatform msjPlatform(h2p_lw_msj_platform, h2p_lw_switches_addr, h2p_lw_i2c, h2p_lw_darkroom, h2p_lw_darkroom_ootx);
+    if (!ros::isInitialized()) {
+        int argc = 0;
+        char **argv = NULL;
+        ros::init(argc, argv, "msj_platform_fpga");
+        ros::start();
+    }
+//    ROS_INFO("off");
+//    IOWR(h2p_lw_i2c[0], 7, false);
+//    ROS_INFO("on");
+//    IOWR(h2p_lw_i2c[0], 7, true);
+
+    I2C i2c(h2p_lw_i2c[0]);
+    vector<uint8_t> active_devices;
+    i2c.checkAddressSpace(0,255,active_devices);
+    stringstream str;
+    for(auto device:active_devices){
+        str << (int)device << "\t";
+    }
+    ROS_INFO_STREAM(str.str());
 
 
     uint8_t mask = 0x1;

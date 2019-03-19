@@ -2,13 +2,6 @@
 
 TLV493D::TLV493D(int32_t *i2c_base):i2c_base(i2c_base){
     i2c = boost::shared_ptr<I2C>(new I2C(i2c_base));
-    vector<uint8_t> data;
-    i2c->read(0x5e, 1, 1, data);
-    if (i2c->ack_error()) {
-        ROS_INFO("TLV sensor active at: %x", 0x5e);
-    }else{
-        ROS_ERROR("sensor does not respond on address: %x", 0x5e);
-    }
     reset();
     reset();
 }
@@ -16,14 +9,14 @@ TLV493D::TLV493D(int32_t *i2c_base):i2c_base(i2c_base){
 void TLV493D::reset(){
     // recovery frame
     i2c->write(0xff,0,0);
-    // reset i2x addr
-    i2c->write(0xff,(0x5e<<16),1);
+    // reset i2c addr
+    i2c->write(0x00,0,0);
 
     vector<uint8_t> regdata;
     readAllRegisters(0x5e,regdata,false);
     // Static initial config for now
     uint32_t cfgdata = 0;
-    cfgdata |= (0b011|(regdata[7]&0b11000))<<8;
+    cfgdata |= (0b011|(regdata[7]&0b0011000))<<8;
     cfgdata |= (regdata[8]<<16);
     cfgdata |= (0b01000000|(0b11111&regdata[9]))<<24;
     if(!checkParity(cfgdata))
@@ -80,7 +73,7 @@ bool TLV493D::read(float &fx, float &fy, float &fz){
 //    ROS_INFO("%d %d", (data[3]>>2)&0x3, frameCounter%4);
     if((data[3]&0x3)!=0 || (((data[3]>>2)&0x3)!=(frameCounter%4))){
         reset();
-        ROS_WARN_THROTTLE(5,"ohoh frame counter incorrect, attemptimg to reset sensor");
+        ROS_WARN_THROTTLE(5,"oh oh frame counter incorrect, attemptimg to reset tlv sensor");
         return false;
     }
 

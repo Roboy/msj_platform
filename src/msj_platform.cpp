@@ -133,10 +133,6 @@ void MSJPlatform::publishMagneticSensors() {
         for(int i=0;i<tlv.size();i++){
             float fx = 0,fy = 0,fz = 0;
             bool success = tlv[i]->read(fx,fy,fz);
-            if(!success) {
-                ROS_WARN_THROTTLE(5,"oh oh, magnetic sensor values invalid");
-//                tlv[i]->reset();
-            }
             msg.sensor_id.push_back(i);
             msg.x.push_back(fx);
             msg.y.push_back(fy);

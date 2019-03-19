@@ -41,6 +41,7 @@ MSJPlatform::MSJPlatform(int32_t *msj_platform_base, int32_t *switch_base, vecto
         MSJ_WRITE_deadBand(msj_platform_base,i,0);
         MSJ_WRITE_control_mode(msj_platform_base,i,2);
         MSJ_WRITE_sp(msj_platform_base,i,zero_speed[i]);
+        control_mode[i] = 2;
     }
     MSJ_WRITE_sensor_update_freq(msj_platform_base, 1000);
     MSJ_WRITE_pwm_mute(msj_platform_base,false);
@@ -77,6 +78,7 @@ MSJPlatform::~MSJPlatform(){
     ROS_INFO("returning control to fpga");
     for(int i=0; i<NUMBER_OF_MOTORS; i++){
         MSJ_WRITE_control_mode(msj_platform_base,i,0);
+        MSJ_WRITE_sp(msj_platform_base, i, (int) sp[i]);
     }
 }
 
@@ -128,12 +130,12 @@ void MSJPlatform::publishMagneticSensors() {
     ros::Rate rate(200);
     while (ros::ok()) {
         roboy_middleware_msgs::MagneticSensor msg;
-        float fx,fy,fz;
         for(int i=0;i<tlv.size();i++){
+            float fx = 0,fy = 0,fz = 0;
             bool success = tlv[i]->read(fx,fy,fz);
             if(!success) {
                 ROS_WARN_THROTTLE(5,"oh oh, magnetic sensor values invalid");
-                tlv[i]->reset();
+//                tlv[i]->reset();
             }
             msg.sensor_id.push_back(i);
             msg.x.push_back(fx);
@@ -150,6 +152,7 @@ void MSJPlatform::PIDController(){
     int32_t pos[NUMBER_OF_MOTORS];
     float err[NUMBER_OF_MOTORS], err_prev[NUMBER_OF_MOTORS] = {0}, result[NUMBER_OF_MOTORS];
     while (ros::ok()) {
+//        stringstream str;
         for(int i=0;i<NUMBER_OF_MOTORS;i++){
             pos[i] = MSJ_READ_sensor_angle_absolute(msj_platform_base,i);
             err[i] = sp[i]-pos[i];
@@ -158,13 +161,16 @@ void MSJPlatform::PIDController(){
                 integral[i] = integralMax;
             if(integral[i]<-integralMax)
                 integral[i] = -integralMax;
-            result[i] = Kp*err[i] + Kd*(err_prev[i]-err[i]) + integral[i];
+            result[i] = zero_speed[i] + Kp*err[i] + Kd*(err_prev[i]-err[i]) + integral[i];
             if(result[i]>zero_speed[i]+30)
                 result[i] = zero_speed[i]+30;
             else if(result[i]<zero_speed[i]-30)
                 result[i] = zero_speed[i]-30;
             MSJ_WRITE_sp(msj_platform_base, i, (int) result[i]);
+            err_prev[i] = err[i];
+//            str << "sp: " << sp[i] << "\t" << "err: " << err[i] << "\t" << "result: " <<result[i]<<"\t";
         }
+//        ROS_INFO_STREAM_THROTTLE(1,str.str());
         rate.sleep();
     }
 }
@@ -182,15 +188,18 @@ void MSJPlatform::MotorCommand(const roboy_middleware_msgs::MotorCommandConstPtr
         ROS_INFO_THROTTLE(60,"receiving motor commands, but they are not for me (id=5)");
         return;
     }
+//    stringstream str;
     for(int i=0;i<msg->motors.size();i++) {
         if(control_mode[i]!=2) {
 //        MSJ_WRITE_control_mode(msj_platform_base, msg->motors[i], 2);
             MSJ_WRITE_sp(msj_platform_base, msg->motors[i], (int) msg->set_points[i]);
 //        ROS_INFO_STREAM("motor " << msg->motors[i] << " " << msg->set_points[i]);
         }else{
-            sp[i] = (int) msg->set_points[i];
+            sp[msg->motors[i]] = (int) msg->set_points[i];
+//            str << sp[msg->motors[i]] << "\t";
         }
     }
+//    ROS_INFO_STREAM_THROTTLE(1,str.str());
 }
 
 bool MSJPlatform::EmergencyStop(std_srvs::SetBool::Request &req, std_srvs::SetBool::Response &res){

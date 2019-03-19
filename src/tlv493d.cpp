@@ -10,13 +10,17 @@ TLV493D::TLV493D(int32_t *i2c_base):i2c_base(i2c_base){
         ROS_ERROR("sensor does not respond on address: %x", 0x5e);
     }
     reset();
+    reset();
 }
 
 void TLV493D::reset(){
-    vector<uint8_t> regdata;
-    readAllRegisters(0x5e,regdata);
+    // recovery frame
+    i2c->write(0xff,0,0);
+    // reset i2x addr
+    i2c->write(0xff,(0x5e<<16),1);
 
-    // Begin config
+    vector<uint8_t> regdata;
+    readAllRegisters(0x5e,regdata,false);
     // Static initial config for now
     uint32_t cfgdata = 0;
     cfgdata |= (0b011|(regdata[7]&0b11000))<<8;
@@ -25,7 +29,10 @@ void TLV493D::reset(){
     if(!checkParity(cfgdata))
         cfgdata |= (0b10000000<<8);
     i2c->write(0x5e, cfgdata, 4);
-    ROS_WARN("resetting sensor");
+
+    vector<uint8_t> data;
+    i2c->read_continuous(0x5e,7, data);
+    frameCounter = data[3]>>2&0x3;
 }
 
 TLV493D::~TLV493D() {
@@ -69,8 +76,13 @@ void TLV493D::readAllRegisters(int deviceaddress, vector<uint8_t> &reg, bool pri
 bool TLV493D::read(float &fx, float &fy, float &fz){
     vector<uint8_t> data;
     i2c->read_continuous(0x5e,7, data);
-    if((data[3]&0x3)!=0)
+    frameCounter++;
+//    ROS_INFO("%d %d", (data[3]>>2)&0x3, frameCounter%4);
+    if((data[3]&0x3)!=0 || (((data[3]>>2)&0x3)!=(frameCounter%4))){
+        reset();
+        ROS_WARN_THROTTLE(5,"ohoh frame counter incorrect, attemptimg to reset sensor");
         return false;
+    }
 
     fx = convertToMilliTesla(data[0], (uint8_t)(data[4]>>4));
     fy = convertToMilliTesla(data[1], (uint8_t)(data[4]&0xF));

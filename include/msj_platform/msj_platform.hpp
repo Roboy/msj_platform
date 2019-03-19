@@ -163,12 +163,12 @@ private:
     boost::shared_ptr<ros::AsyncSpinner> spinner;
     int32_t *msj_platform_base, *switch_base, *darkroom_base, *darkroom_ootx_base;
     boost::shared_ptr<std::thread> status_thread, magnetic_thread, pid_control_thread, darkroom_thread, darkroom_ootx_thread;
-    vector<int32_t> zero_speed = {330,330,330,330,330,330,330,330};
+    vector<int32_t> zero_speed = {333,333,330,328,330,330,330,330};
     vector<boost::shared_ptr<TLV493D>> tlv;
     vector<int32_t*> i2c_base;
     int control_mode[NUMBER_OF_MOTORS] = {2};
     int sp[NUMBER_OF_MOTORS] = {0};
-    float Kp = 0.01, Kd = 0, Ki = 0, integralMax = 1000, integral[NUMBER_OF_MOTORS] = {0};
+    float Kp = 0.01, Kd = 0.01, Ki = 0.0001, integralMax = 3, integral[NUMBER_OF_MOTORS] = {0};
     union {
         uint8_t data[33];
         struct {

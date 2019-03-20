@@ -35,8 +35,6 @@
 
 #pragma once
 
-#define NUMBER_OF_MOTORS 8
-
 #define IORD(base, reg) (*(((volatile int32_t*)base)+reg))
 #define IOWR(base, reg, data) (*(((volatile int32_t*)base)+reg)=data)
 
@@ -99,8 +97,10 @@
 #include "msj_platform/tlv493d.hpp"
 #include "msj_platform/half.hpp"
 #include "msj_platform/CRC32.h"
+#include <common_utilities/CommonDefinitions.h>
 
-#define NUM_SENSORS 13
+#define NUMBER_OF_MOTORS 8
+#define NUM_SENSORS 13 // darkroom sensors
 #define SPINDLE_RADIUS 0.0055
 #define msjMeterPerEncoderTick(encoderTicks) (((encoderTicks)/4096.0*2.0*M_PI)*(2.0*M_PI*SPINDLE_RADIUS))
 

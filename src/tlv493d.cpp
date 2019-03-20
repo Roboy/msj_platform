@@ -6,19 +6,18 @@ TLV493D::TLV493D(int32_t *i2c_base):i2c_base(i2c_base){
 }
 
 void TLV493D::reset(){
-    i2c->resetTLV();
-    usleep(10000);
-
+//    i2c->resetTLV();
+//    usleep(10000);
+//    i2c->write(0xff,0,1);
     vector<uint8_t> regdata;
     readAllRegisters(0x1f,regdata,true);
     // Static initial config for now
     uint32_t cfgdata = 0;
-    cfgdata |= (0b011|(regdata[7]&0b0011000))<<8;
+    cfgdata |= (0b1100011|(regdata[7]&0b1111000))<<8;
     cfgdata |= (regdata[8]<<16);
     cfgdata |= (0b01000000|(0b11111&regdata[9]))<<24;
     if(!checkParity(cfgdata))
         cfgdata |= (0b10000000<<8);
-    i2c->write(0x1f, cfgdata, 4);
     i2c->write(0x1f, cfgdata, 4);
 
     vector<uint8_t> data;
@@ -70,7 +69,7 @@ bool TLV493D::read(float &fx, float &fy, float &fz){
     frameCounter++;
     ROS_INFO("%d %d", (data[3]>>2)&0x3, frameCounter%4);
     if((data[3]&0x3)!=0 || (((data[3]>>2)&0x3)!=(frameCounter%4))){
-        reset();
+//        reset();
         ROS_WARN_THROTTLE(5,"oh oh frame counter incorrect, attemptimg to reset tlv sensor");
         return false;
     }

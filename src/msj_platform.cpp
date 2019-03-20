@@ -39,9 +39,9 @@ MSJPlatform::MSJPlatform(int32_t *msj_platform_base, int32_t *switch_base, vecto
 
         MSJ_WRITE_outputDivider(msj_platform_base,i,40);
         MSJ_WRITE_deadBand(msj_platform_base,i,0);
-        MSJ_WRITE_control_mode(msj_platform_base,i,2);
+        MSJ_WRITE_control_mode(msj_platform_base,i,2);// direct feed through to pwm
         MSJ_WRITE_sp(msj_platform_base,i,zero_speed[i]);
-        control_mode[i] = 2;
+        control_mode[i] = POSITION;
     }
     MSJ_WRITE_sensor_update_freq(msj_platform_base, 1000);
     MSJ_WRITE_pwm_mute(msj_platform_base,false);
@@ -145,13 +145,18 @@ void MSJPlatform::publishMagneticSensors() {
 
 void MSJPlatform::PIDController(){
     ros::Rate rate(200);
-    int32_t pos[NUMBER_OF_MOTORS];
+    int32_t pos[NUMBER_OF_MOTORS], pos_prev[NUMBER_OF_MOTORS] = {0}, vel[NUMBER_OF_MOTORS] = {0};
     float err[NUMBER_OF_MOTORS], err_prev[NUMBER_OF_MOTORS] = {0}, result[NUMBER_OF_MOTORS];
     while (ros::ok()) {
 //        stringstream str;
         for(int i=0;i<NUMBER_OF_MOTORS;i++){
             pos[i] = MSJ_READ_sensor_angle_absolute(msj_platform_base,i);
-            err[i] = sp[i]-pos[i];
+            vel[i] = (pos_prev[i] - pos[i])/rate.cycleTime().toSec();
+            if(control_mode[i]==POSITION)
+                err[i] = sp[i]-pos[i];
+            else if(control_mode[i]==VELOCITY)
+                err[i] = sp[i]-vel[i];
+
             integral[i] += Ki*err[i];
             if(integral[i]>integralMax)
                 integral[i] = integralMax;
@@ -164,6 +169,7 @@ void MSJPlatform::PIDController(){
                 result[i] = zero_speed[i]-30;
             MSJ_WRITE_sp(msj_platform_base, i, (int) result[i]);
             err_prev[i] = err[i];
+            pos_prev[i] = pos[i];
 //            str << "sp: " << sp[i] << "\t" << "err: " << err[i] << "\t" << "result: " <<result[i]<<"\t";
         }
 //        ROS_INFO_STREAM_THROTTLE(1,str.str());
@@ -430,21 +436,21 @@ int main(int argc, char *argv[]) {
 #else
     h2p_lw_msj_platform = nullptr;
 #endif
-#ifdef I2C_0_BASE
-    h2p_lw_i2c.push_back((int32_t*)(virtual_base + ( ( unsigned long  )( ALT_LWFPGASLVS_OFST + I2C_0_BASE ) & ( unsigned long)( HW_REGS_MASK )) ));
-#else
-    h2p_lw_msj_platform = nullptr;
-#endif
+//#ifdef I2C_0_BASE
+//    h2p_lw_i2c.push_back((int32_t*)(virtual_base + ( ( unsigned long  )( ALT_LWFPGASLVS_OFST + I2C_0_BASE ) & ( unsigned long)( HW_REGS_MASK )) ));
+//#else
+//    h2p_lw_msj_platform = nullptr;
+//#endif
 //#ifdef I2C_1_BASE
 //    h2p_lw_i2c.push_back((int32_t*)(virtual_base + ( ( unsigned long  )( ALT_LWFPGASLVS_OFST + I2C_1_BASE ) & ( unsigned long)( HW_REGS_MASK )) ));
 //#else
 //    h2p_lw_msj_platform = nullptr;
 //#endif
-//#ifdef I2C_2_BASE
-//    h2p_lw_i2c.push_back((int32_t*)(virtual_base + ( ( unsigned long  )( ALT_LWFPGASLVS_OFST + I2C_2_BASE ) & ( unsigned long)( HW_REGS_MASK )) ));
-//#else
-//    h2p_lw_msj_platform = nullptr;
-//#endif
+#ifdef I2C_2_BASE
+    h2p_lw_i2c.push_back((int32_t*)(virtual_base + ( ( unsigned long  )( ALT_LWFPGASLVS_OFST + I2C_2_BASE ) & ( unsigned long)( HW_REGS_MASK )) ));
+#else
+    h2p_lw_msj_platform = nullptr;
+#endif
 #ifdef DARKROOM_0_BASE
     h2p_lw_darkroom = (int32_t*)(virtual_base + ( ( unsigned long  )( ALT_LWFPGASLVS_OFST + DARKROOM_0_BASE ) & ( unsigned long)( HW_REGS_MASK )) );
 #else
@@ -456,26 +462,26 @@ int main(int argc, char *argv[]) {
     h2p_lw_darkroom_ootx = nullptr;
 #endif
 
-//    MSJPlatform msjPlatform(h2p_lw_msj_platform, h2p_lw_switches_addr, h2p_lw_i2c, h2p_lw_darkroom, h2p_lw_darkroom_ootx);
-    if (!ros::isInitialized()) {
-        int argc = 0;
-        char **argv = NULL;
-        ros::init(argc, argv, "msj_platform_fpga");
-        ros::start();
-    }
+    MSJPlatform msjPlatform(h2p_lw_msj_platform, h2p_lw_switches_addr, h2p_lw_i2c, h2p_lw_darkroom, h2p_lw_darkroom_ootx);
+//    if (!ros::isInitialized()) {
+//        int argc = 0;
+//        char **argv = NULL;
+//        ros::init(argc, argv, "msj_platform_fpga");
+//        ros::start();
+//    }
 //    ROS_INFO("off");
 //    IOWR(h2p_lw_i2c[0], 7, false);
 //    ROS_INFO("on");
 //    IOWR(h2p_lw_i2c[0], 7, true);
 
-    I2C i2c(h2p_lw_i2c[0]);
-    vector<uint8_t> active_devices;
-    i2c.checkAddressSpace(0,255,active_devices);
-    stringstream str;
-    for(auto device:active_devices){
-        str << (int)device << "\t";
-    }
-    ROS_INFO_STREAM(str.str());
+//    I2C i2c(h2p_lw_i2c[0]);
+//    vector<uint8_t> active_devices;
+//    i2c.checkAddressSpace(0,255,active_devices);
+//    stringstream str;
+//    for(auto device:active_devices){
+//        str << (int)device << "\t";
+//    }
+//    ROS_INFO_STREAM(str.str());
 
 
     uint8_t mask = 0x1;

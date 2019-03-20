@@ -103,6 +103,8 @@ public:
 	const uint8_t RW = 2;
 	const uint8_t ENA = 3;
 	const uint8_t NUMBER_OF_BYTES = 4;
+	const uint8_t TLV_SDA = 8;
+	const uint8_t TLV_SCL = 9;
 
 	// registers: only write
 	const uint8_t GPIO_CONTROL = 5;

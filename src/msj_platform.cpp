@@ -436,21 +436,21 @@ int main(int argc, char *argv[]) {
 #else
     h2p_lw_msj_platform = nullptr;
 #endif
-//#ifdef I2C_0_BASE
-//    h2p_lw_i2c.push_back((int32_t*)(virtual_base + ( ( unsigned long  )( ALT_LWFPGASLVS_OFST + I2C_0_BASE ) & ( unsigned long)( HW_REGS_MASK )) ));
-//#else
-//    h2p_lw_msj_platform = nullptr;
-//#endif
+#ifdef I2C_0_BASE
+    h2p_lw_i2c.push_back((int32_t*)(virtual_base + ( ( unsigned long  )( ALT_LWFPGASLVS_OFST + I2C_0_BASE ) & ( unsigned long)( HW_REGS_MASK )) ));
+#else
+    h2p_lw_msj_platform = nullptr;
+#endif
 //#ifdef I2C_1_BASE
 //    h2p_lw_i2c.push_back((int32_t*)(virtual_base + ( ( unsigned long  )( ALT_LWFPGASLVS_OFST + I2C_1_BASE ) & ( unsigned long)( HW_REGS_MASK )) ));
 //#else
 //    h2p_lw_msj_platform = nullptr;
 //#endif
-#ifdef I2C_2_BASE
-    h2p_lw_i2c.push_back((int32_t*)(virtual_base + ( ( unsigned long  )( ALT_LWFPGASLVS_OFST + I2C_2_BASE ) & ( unsigned long)( HW_REGS_MASK )) ));
-#else
-    h2p_lw_msj_platform = nullptr;
-#endif
+//#ifdef I2C_2_BASE
+//    h2p_lw_i2c.push_back((int32_t*)(virtual_base + ( ( unsigned long  )( ALT_LWFPGASLVS_OFST + I2C_2_BASE ) & ( unsigned long)( HW_REGS_MASK )) ));
+//#else
+//    h2p_lw_msj_platform = nullptr;
+//#endif
 #ifdef DARKROOM_0_BASE
     h2p_lw_darkroom = (int32_t*)(virtual_base + ( ( unsigned long  )( ALT_LWFPGASLVS_OFST + DARKROOM_0_BASE ) & ( unsigned long)( HW_REGS_MASK )) );
 #else

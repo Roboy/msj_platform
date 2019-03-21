@@ -6,23 +6,38 @@ TLV493D::TLV493D(int32_t *i2c_base):i2c_base(i2c_base){
 }
 
 void TLV493D::reset(){
-//    i2c->resetTLV();
-//    usleep(10000);
-//    i2c->write(0xff,0,1);
-    vector<uint8_t> regdata;
-    readAllRegisters(0x1f,regdata,true);
-    // Static initial config for now
-    uint32_t cfgdata = 0;
-    cfgdata |= (0b1100011|(regdata[7]&0b1111000))<<8;
-    cfgdata |= (regdata[8]<<16);
-    cfgdata |= (0b01000000|(0b11111&regdata[9]))<<24;
-    if(!checkParity(cfgdata))
-        cfgdata |= (0b10000000<<8);
-    i2c->write(0x1f, cfgdata, 4);
-
-    vector<uint8_t> data;
-    i2c->read_continuous(0x1f,7, data);
-    frameCounter = data[3]>>2&0x3;
+    i2c->resetTLV();
+    {
+        vector<uint8_t> regdata;
+        readAllRegisters(0x5e, regdata, true);
+        // Static initial config for now
+        uint32_t cfgdata = 0;
+        cfgdata |= (0b0000011 | (regdata[7] & 0b0011000)) << 8;
+        cfgdata |= (regdata[8] << 16);
+        cfgdata |= (0b01000000 | (0b11111 & regdata[9])) << 24;
+        if (!checkParity(cfgdata))
+            cfgdata |= (0b10000000 << 8);
+        i2c->write(0x5e, cfgdata, 4);
+        vector<uint8_t> data;
+        i2c->read_continuous(0x5e,7, data);
+        frameCounter = data[3]>>2&0x3;
+    }
+    {
+        vector<uint8_t> regdata;
+        readAllRegisters(0x5e, regdata, true);
+        // Static initial config for now
+        uint32_t cfgdata = 0;
+        cfgdata |= (0b0000011 | (regdata[7] & 0b0011000)) << 8;
+        cfgdata |= (regdata[8] << 16);
+        cfgdata |= (0b01000000 | (0b11111 & regdata[9])) << 24;
+        if (!checkParity(cfgdata))
+            cfgdata |= (0b10000000 << 8);
+        i2c->write(0x5e, cfgdata, 4);
+        vector<uint8_t> data;
+        i2c->read_continuous(0x5e, 7, data);
+        frameCounter = data[3] >> 2 & 0x3;
+    }
+    frameCounter++;
 }
 
 TLV493D::~TLV493D() {
@@ -65,15 +80,21 @@ void TLV493D::readAllRegisters(int deviceaddress, vector<uint8_t> &reg, bool pri
 
 bool TLV493D::read(float &fx, float &fy, float &fz){
     vector<uint8_t> data;
-    i2c->read_continuous(0x1f,7, data);
+    i2c->read_continuous(0x5e,7, data);
     frameCounter++;
-    ROS_INFO("%d %d", (data[3]>>2)&0x3, frameCounter%4);
-    if((data[3]&0x3)!=0 || (((data[3]>>2)&0x3)!=(frameCounter%4))){
-//        reset();
+//    ROS_INFO("%d %d", (data[3]>>2)&0x3, frameCounter%4);
+    bool success = true;
+    if((((data[3]>>2)&0x3)!=(frameCounter%4))){
+        reset();
         ROS_WARN_THROTTLE(5,"oh oh frame counter incorrect, attemptimg to reset tlv sensor");
-        return false;
+        success = false;
     }
-
+    if((data[3]&0x3)!=0){
+        ROS_WARN_THROTTLE(1,"sensor values not ready yet");
+        success = false;
+    }
+    if(!success)
+        return false;
     fx = convertToMilliTesla(data[0], (uint8_t)(data[4]>>4));
     fy = convertToMilliTesla(data[1], (uint8_t)(data[4]&0xF));
     fz = convertToMilliTesla(data[2], (uint8_t)(data[5]&0xF));

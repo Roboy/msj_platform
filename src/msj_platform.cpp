@@ -389,6 +389,7 @@ int32_t *h2p_lw_msj_platform;
 vector<int32_t*> h2p_lw_i2c;
 int32_t *h2p_lw_darkroom;
 int32_t *h2p_lw_darkroom_ootx;
+int32_t *h2p_lw_tlv;
 
 void SigintHandler(int sig)
 {
@@ -438,19 +439,13 @@ int main(int argc, char *argv[]) {
 #endif
 #ifdef I2C_0_BASE
     h2p_lw_i2c.push_back((int32_t*)(virtual_base + ( ( unsigned long  )( ALT_LWFPGASLVS_OFST + I2C_0_BASE ) & ( unsigned long)( HW_REGS_MASK )) ));
-#else
-    h2p_lw_msj_platform = nullptr;
 #endif
-//#ifdef I2C_1_BASE
-//    h2p_lw_i2c.push_back((int32_t*)(virtual_base + ( ( unsigned long  )( ALT_LWFPGASLVS_OFST + I2C_1_BASE ) & ( unsigned long)( HW_REGS_MASK )) ));
-//#else
-//    h2p_lw_msj_platform = nullptr;
-//#endif
-//#ifdef I2C_2_BASE
-//    h2p_lw_i2c.push_back((int32_t*)(virtual_base + ( ( unsigned long  )( ALT_LWFPGASLVS_OFST + I2C_2_BASE ) & ( unsigned long)( HW_REGS_MASK )) ));
-//#else
-//    h2p_lw_msj_platform = nullptr;
-//#endif
+#ifdef I2C_1_BASE
+    h2p_lw_i2c.push_back((int32_t*)(virtual_base + ( ( unsigned long  )( ALT_LWFPGASLVS_OFST + I2C_1_BASE ) & ( unsigned long)( HW_REGS_MASK )) ));
+#endif
+#ifdef I2C_2_BASE
+    h2p_lw_i2c.push_back((int32_t*)(virtual_base + ( ( unsigned long  )( ALT_LWFPGASLVS_OFST + I2C_2_BASE ) & ( unsigned long)( HW_REGS_MASK )) ));
+#endif
 #ifdef DARKROOM_0_BASE
     h2p_lw_darkroom = (int32_t*)(virtual_base + ( ( unsigned long  )( ALT_LWFPGASLVS_OFST + DARKROOM_0_BASE ) & ( unsigned long)( HW_REGS_MASK )) );
 #else
@@ -461,14 +456,24 @@ int main(int argc, char *argv[]) {
 #else
     h2p_lw_darkroom_ootx = nullptr;
 #endif
+#ifdef TLV493_0_BASE
+    h2p_lw_tlv = (int32_t*)(virtual_base + ( ( unsigned long  )( ALT_LWFPGASLVS_OFST + TLV493_0_BASE ) & ( unsigned long)( HW_REGS_MASK )) );
+#else
+    h2p_lw_darkroom_ootx = nullptr;
+#endif
 
     MSJPlatform msjPlatform(h2p_lw_msj_platform, h2p_lw_switches_addr, h2p_lw_i2c, h2p_lw_darkroom, h2p_lw_darkroom_ootx);
-//    if (!ros::isInitialized()) {
-//        int argc = 0;
-//        char **argv = NULL;
-//        ros::init(argc, argv, "msj_platform_fpga");
-//        ros::start();
-//    }
+    if (!ros::isInitialized()) {
+        int argc = 0;
+        char **argv = NULL;
+        ros::init(argc, argv, "msj_platform_fpga");
+        ros::start();
+    }
+    IOWR(h2p_lw_tlv,(0<<8),1);
+    while(ros::ok())
+        IOWR(h2p_lw_tlv,(2<<8),1);
+
+
 //    ROS_INFO("off");
 //    IOWR(h2p_lw_i2c[0], 7, false);
 //    ROS_INFO("on");

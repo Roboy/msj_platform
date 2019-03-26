@@ -89,7 +89,7 @@
 #define SYSID_QSYS_SPAN 8
 #define SYSID_QSYS_END 0x1007
 #define SYSID_QSYS_ID 3735879937
-#define SYSID_QSYS_TIMESTAMP 1553292064
+#define SYSID_QSYS_TIMESTAMP 1553526556
 
 /*
  * Macros for device 'jtag_uart', class 'altera_avalon_jtag_uart'
@@ -117,17 +117,6 @@
 #define TLV493_0_BASE 0x40000
 #define TLV493_0_SPAN 262144
 #define TLV493_0_END 0x7ffff
-
-/*
- * Macros for device 'MSJPlatformController_0', class 'MSJPlatformController'
- * The macros are prefixed with 'MSJPLATFORMCONTROLLER_0_'.
- * The prefix is the slave descriptor.
- */
-#define MSJPLATFORMCONTROLLER_0_COMPONENT_TYPE MSJPlatformController
-#define MSJPLATFORMCONTROLLER_0_COMPONENT_NAME MSJPlatformController_0
-#define MSJPLATFORMCONTROLLER_0_BASE 0x80000
-#define MSJPLATFORMCONTROLLER_0_SPAN 262144
-#define MSJPLATFORMCONTROLLER_0_END 0xbffff
 
 
 #endif /* _ALTERA_HPS_0_H_ */

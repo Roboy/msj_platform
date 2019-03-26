@@ -462,16 +462,24 @@ int main(int argc, char *argv[]) {
     h2p_lw_darkroom_ootx = nullptr;
 #endif
 
-    MSJPlatform msjPlatform(h2p_lw_msj_platform, h2p_lw_switches_addr, h2p_lw_i2c, h2p_lw_darkroom, h2p_lw_darkroom_ootx);
+//    MSJPlatform msjPlatform(h2p_lw_msj_platform, h2p_lw_switches_addr, h2p_lw_i2c, h2p_lw_darkroom, h2p_lw_darkroom_ootx);
     if (!ros::isInitialized()) {
         int argc = 0;
         char **argv = NULL;
         ros::init(argc, argv, "msj_platform_fpga");
         ros::start();
     }
-    IOWR(h2p_lw_tlv,(0<<8),1);
-    while(ros::ok())
-        IOWR(h2p_lw_tlv,(2<<8),1);
+    TLV493D tlv(h2p_lw_i2c[0]);
+    while(ros::ok()) {
+        ROS_INFO_STREAM_THROTTLE(0.1, "x\t" << tlv.convertToMilliTesla(IORD(h2p_lw_tlv, (0 << 8))));
+        ROS_INFO_STREAM_THROTTLE(0.1, "y\t" << tlv.convertToMilliTesla(IORD(h2p_lw_tlv, (1 << 8))));
+        ROS_INFO_STREAM_THROTTLE(0.1, "z\t" << tlv.convertToMilliTesla(IORD(h2p_lw_tlv, (2 << 8))));
+        ROS_INFO_STREAM_THROTTLE(0.1, "t\t" << IORD(h2p_lw_tlv, (3 << 8)));
+        ROS_INFO_STREAM_THROTTLE(0.1, "status\t" << (((IORD(h2p_lw_tlv, (4 << 8)))>>2)&0x3));
+        float x,y,z;
+        tlv.read(x,y,z);
+        ROS_INFO_THROTTLE(0.1, "%f %f %f", x,y,z);
+    }
 
 
 //    ROS_INFO("off");

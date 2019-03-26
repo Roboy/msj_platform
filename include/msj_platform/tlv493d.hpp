@@ -62,6 +62,7 @@ public:
     bool initTLV(uint8_t &deviceaddress, int devicepin);
     void reset();
     float convertToMilliTesla(uint8_t MSB, uint8_t LSB) ;
+    float convertToMilliTesla(uint32_t data) ;
     void readAllRegisters(int deviceaddress, vector<uint8_t> &reg, bool print=true);
     bool read(float &fx, float &fy, float &fz);
 private:

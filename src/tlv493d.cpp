@@ -9,7 +9,7 @@ void TLV493D::reset(){
     i2c->resetTLV();
     {
         vector<uint8_t> regdata;
-        readAllRegisters(0x5e, regdata, true);
+        readAllRegisters(0x5e, regdata, false);
         // Static initial config for now
         uint32_t cfgdata = 0;
         cfgdata |= (0b0000011 | (regdata[7] & 0b0011000)) << 8;
@@ -24,7 +24,7 @@ void TLV493D::reset(){
     }
     {
         vector<uint8_t> regdata;
-        readAllRegisters(0x5e, regdata, true);
+        readAllRegisters(0x5e, regdata, false);
         // Static initial config for now
         uint32_t cfgdata = 0;
         cfgdata |= (0b0000011 | (regdata[7] & 0b0011000)) << 8;
@@ -54,6 +54,20 @@ bool TLV493D::checkParity(uint32_t v){
 
 float TLV493D::convertToMilliTesla(uint8_t MSB, uint8_t LSB) {
     uint16_t data = (MSB<<4|(LSB&0xF));
+    int val = 0;
+    for(int i=11;i>=0;i--){
+        if(i==11){
+            if((data>>i)&0x1)
+                val = -2048;
+        }else{
+            if((data>>i)&0x1)
+                val += (1<<i);
+        }
+    }
+    return val*0.098;
+}
+
+float TLV493D::convertToMilliTesla(uint32_t data) {
     int val = 0;
     for(int i=11;i>=0;i--){
         if(i==11){

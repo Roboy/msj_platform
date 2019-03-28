@@ -7,8 +7,8 @@ using namespace std;
 #define HW_REGS_SPAN ( 0x04000000 )
 #define HW_REGS_MASK ( HW_REGS_SPAN - 1 )
 
-MSJPlatform::MSJPlatform(int32_t *msj_platform_base, int32_t *switch_base, vector<int32_t*> i2c_base, int32_t*darkroom_base, int32_t*darkroom_ootx_base):
-        msj_platform_base(msj_platform_base),switch_base(switch_base),i2c_base(i2c_base),darkroom_base(darkroom_base),darkroom_ootx_base(darkroom_ootx_base){
+MSJPlatform::MSJPlatform(int32_t *msj_platform_base, int32_t *switch_base, vector<int32_t*> i2c_base, vector<int32_t*> tlv_base, int32_t*darkroom_base, int32_t*darkroom_ootx_base):
+        msj_platform_base(msj_platform_base),switch_base(switch_base),i2c_base(i2c_base),tlv_base(tlv_base),darkroom_base(darkroom_base),darkroom_ootx_base(darkroom_ootx_base){
     if (!ros::isInitialized()) {
         int argc = 0;
         char **argv = NULL;
@@ -49,8 +49,8 @@ MSJPlatform::MSJPlatform(int32_t *msj_platform_base, int32_t *switch_base, vecto
     status_thread = boost::shared_ptr<std::thread>( new std::thread(&MSJPlatform::publishStatus, this));
     status_thread->detach();
 
-    for(int i=0;i<i2c_base.size();i++){
-        tlv.push_back(boost::shared_ptr<TLV493D>(new TLV493D(i2c_base[i])));
+    for(int i=0;i<tlv_base.size();i++){
+        tlv.push_back(boost::shared_ptr<TLV493D_FPGA>(new TLV493D_FPGA(tlv_base[i])));
     }
 
     magnetic_thread = boost::shared_ptr<std::thread>( new std::thread(&MSJPlatform::publishMagneticSensors, this));
@@ -389,7 +389,7 @@ int32_t *h2p_lw_msj_platform;
 vector<int32_t*> h2p_lw_i2c;
 int32_t *h2p_lw_darkroom;
 int32_t *h2p_lw_darkroom_ootx;
-int32_t *h2p_lw_tlv;
+vector<int32_t *> h2p_lw_tlv;
 
 void SigintHandler(int sig)
 {
@@ -456,30 +456,47 @@ int main(int argc, char *argv[]) {
 #else
     h2p_lw_darkroom_ootx = nullptr;
 #endif
-#ifdef TLV493_0_BASE
-    h2p_lw_tlv = (int32_t*)(virtual_base + ( ( unsigned long  )( ALT_LWFPGASLVS_OFST + TLV493_0_BASE ) & ( unsigned long)( HW_REGS_MASK )) );
-#else
-    h2p_lw_darkroom_ootx = nullptr;
+#ifdef TLV_0_BASE
+    h2p_lw_tlv.push_back((int32_t*)(virtual_base + ( ( unsigned long  )( ALT_LWFPGASLVS_OFST + TLV_0_BASE ) & ( unsigned long)( HW_REGS_MASK )) ));
+#endif
+#ifdef TLV_1_BASE
+    h2p_lw_tlv.push_back((int32_t*)(virtual_base + ( ( unsigned long  )( ALT_LWFPGASLVS_OFST + TLV_1_BASE ) & ( unsigned long)( HW_REGS_MASK )) ));
+#endif
+#ifdef TLV_2_BASE
+    h2p_lw_tlv.push_back((int32_t*)(virtual_base + ( ( unsigned long  )( ALT_LWFPGASLVS_OFST + TLV_2_BASE ) & ( unsigned long)( HW_REGS_MASK )) ));
 #endif
 
-//    MSJPlatform msjPlatform(h2p_lw_msj_platform, h2p_lw_switches_addr, h2p_lw_i2c, h2p_lw_darkroom, h2p_lw_darkroom_ootx);
-    if (!ros::isInitialized()) {
-        int argc = 0;
-        char **argv = NULL;
-        ros::init(argc, argv, "msj_platform_fpga");
-        ros::start();
-    }
-    TLV493D tlv(h2p_lw_i2c[0]);
-    while(ros::ok()) {
-        ROS_INFO_STREAM_THROTTLE(0.1, "x\t" << tlv.convertToMilliTesla(IORD(h2p_lw_tlv, (0 << 8))));
-        ROS_INFO_STREAM_THROTTLE(0.1, "y\t" << tlv.convertToMilliTesla(IORD(h2p_lw_tlv, (1 << 8))));
-        ROS_INFO_STREAM_THROTTLE(0.1, "z\t" << tlv.convertToMilliTesla(IORD(h2p_lw_tlv, (2 << 8))));
-        ROS_INFO_STREAM_THROTTLE(0.1, "t\t" << IORD(h2p_lw_tlv, (3 << 8)));
-        ROS_INFO_STREAM_THROTTLE(0.1, "status\t" << (((IORD(h2p_lw_tlv, (4 << 8)))>>2)&0x3));
-        float x,y,z;
-        tlv.read(x,y,z);
-        ROS_INFO_THROTTLE(0.1, "%f %f %f", x,y,z);
-    }
+    MSJPlatform msjPlatform(h2p_lw_msj_platform, h2p_lw_switches_addr, h2p_lw_i2c, h2p_lw_tlv, h2p_lw_darkroom, h2p_lw_darkroom_ootx);
+//    if (!ros::isInitialized()) {
+//        int argc = 0;
+//        char **argv = NULL;
+//        ros::init(argc, argv, "msj_platform_fpga");
+//        ros::start();
+//    }
+//    vector<boost::shared_ptr<TLV493D_FPGA>> tlv;
+//    for(int i=0;i<h2p_lw_tlv.size();i++){
+//        tlv.push_back(boost::shared_ptr<TLV493D_FPGA>(new TLV493D_FPGA(h2p_lw_tlv[i])));
+//    }
+//    while(ros::ok()) {
+//        vector<float> fx,fy,fz;
+//        for(auto t:tlv){
+//            float x,y,z;
+//            t->read(x,y,z);
+//            fx.push_back(x);
+//            fy.push_back(y);
+//            fz.push_back(z);
+//        }
+//        ROS_INFO_STREAM_THROTTLE(0.1, "x\t" << tlv.convertToMilliTesla(x) << "\t" << x);
+//        ROS_INFO_STREAM_THROTTLE(0.1, "y\t" << tlv.convertToMilliTesla(y) << "\t" << y);
+//        ROS_INFO_STREAM_THROTTLE(0.1, "z\t" << tlv.convertToMilliTesla(z) << "\t" << z);
+//        ROS_INFO_STREAM_THROTTLE(0.1, "t\t" << IORD(h2p_lw_tlv, (3 << 8)));
+//        ROS_INFO_STREAM_THROTTLE(0.1, "ack_error\t" << IORD(h2p_lw_tlv, (5 << 8)));
+//        int frame = IORD(h2p_lw_tlv, (4 << 8));
+//        ROS_INFO_STREAM_THROTTLE(0.1, "status\t" << ((frame >> 2)&0x3) << "\t" << (frame&0x3));
+////        float x,y,z;
+////        tlv.read(x,y,z);
+////        ROS_INFO_THROTTLE(0.1, "%f %f %f", x,y,z);
+//    }
 
 
 //    ROS_INFO("off");

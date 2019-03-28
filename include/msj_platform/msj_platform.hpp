@@ -94,7 +94,7 @@
 #include <std_srvs/Empty.h>
 #include <thread>
 #include <vector>
-#include "msj_platform/tlv493d.hpp"
+#include "msj_platform/tlv493d_fpga.hpp"
 #include "msj_platform/half.hpp"
 #include "msj_platform/CRC32.h"
 #include <common_utilities/CommonDefinitions.h>
@@ -112,7 +112,7 @@ using half_float::half;
 
 class MSJPlatform{
 public:
-    MSJPlatform(int32_t *msj_platform_base, int32_t *switch_base, vector<int32_t*> i2c_base, int32_t* darkroom_base, int32_t* darkroom_base_ootx);
+    MSJPlatform(int32_t *msj_platform_base, int32_t *switch_base, vector<int32_t*> i2c_base, vector<int32_t*> tlv_base, int32_t* darkroom_base, int32_t* darkroom_base_ootx);
     ~MSJPlatform();
     void publishStatus();
     void publishMagneticSensors();
@@ -137,7 +137,7 @@ private:
      * @param b input byte
      * @return reversed byte
      */
-    inline uint8_t reverse(uint8_t b) {
+    inline uint8_t rev(uint8_t b) {
         b = (b & 0xF0) >> 4 | (b & 0x0F) << 4;
         b = (b & 0xCC) >> 2 | (b & 0x33) << 2;
         b = (b & 0xAA) >> 1 | (b & 0x55) << 1;
@@ -150,10 +150,10 @@ private:
      * @return reversed uint32_t
      */
     inline uint32_t reverse(uint32_t b) {
-        uint32_t a = (uint32_t) ((uint8_t) reverse((uint8_t) (b >> 24 & 0xff)) << 24 |
-                                 (uint8_t) reverse((uint8_t) (b >> 16 & 0xff)) << 16 |
-                                 (uint8_t) reverse((uint8_t) (b >> 8 & 0xff)) << 8 |
-                                 (uint8_t) reverse((uint8_t) (b & 0xff)));
+        uint32_t a = (uint32_t) ((uint8_t) rev((uint8_t) (b >> 24 & 0xff)) << 24 |
+                                 (uint8_t) rev((uint8_t) (b >> 16 & 0xff)) << 16 |
+                                 (uint8_t) rev((uint8_t) (b >> 8 & 0xff)) << 8 |
+                                 (uint8_t) rev((uint8_t) (b & 0xff)));
         return a;
     }
     ros::NodeHandlePtr nh;
@@ -164,8 +164,8 @@ private:
     int32_t *msj_platform_base, *switch_base, *darkroom_base, *darkroom_ootx_base;
     boost::shared_ptr<std::thread> status_thread, magnetic_thread, pid_control_thread, darkroom_thread, darkroom_ootx_thread;
     vector<int32_t> zero_speed = {333,333,330,328,330,330,330,330};
-    vector<boost::shared_ptr<TLV493D>> tlv;
-    vector<int32_t*> i2c_base;
+    vector<boost::shared_ptr<TLV493D_FPGA>> tlv;
+    vector<int32_t*> i2c_base, tlv_base;
     int control_mode[NUMBER_OF_MOTORS] = {2};
     int sp[NUMBER_OF_MOTORS] = {0};
     float Kp = 0.01, Kd = 0.01, Ki = 0.0001, integralMax = 3, integral[NUMBER_OF_MOTORS] = {0};

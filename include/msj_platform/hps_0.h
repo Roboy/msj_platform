@@ -68,17 +68,6 @@
 #define LED_RESET_VALUE 0
 
 /*
- * Macros for device 'I2C_1', class 'I2C'
- * The macros are prefixed with 'I2C_1_'.
- * The prefix is the slave descriptor.
- */
-#define I2C_1_COMPONENT_TYPE I2C
-#define I2C_1_COMPONENT_NAME I2C_1
-#define I2C_1_BASE 0x180
-#define I2C_1_SPAN 64
-#define I2C_1_END 0x1bf
-
-/*
  * Macros for device 'sysid_qsys', class 'altera_avalon_sysid_qsys'
  * The macros are prefixed with 'SYSID_QSYS_'.
  * The prefix is the slave descriptor.
@@ -89,7 +78,7 @@
 #define SYSID_QSYS_SPAN 8
 #define SYSID_QSYS_END 0x1007
 #define SYSID_QSYS_ID 3735879937
-#define SYSID_QSYS_TIMESTAMP 1553526556
+#define SYSID_QSYS_TIMESTAMP 1553797014
 
 /*
  * Macros for device 'jtag_uart', class 'altera_avalon_jtag_uart'
@@ -108,15 +97,48 @@
 #define JTAG_UART_WRITE_THRESHOLD 8
 
 /*
- * Macros for device 'TLV493_0', class 'TLV493'
- * The macros are prefixed with 'TLV493_0_'.
+ * Macros for device 'TLV_2', class 'TLV493'
+ * The macros are prefixed with 'TLV_2_'.
  * The prefix is the slave descriptor.
  */
-#define TLV493_0_COMPONENT_TYPE TLV493
-#define TLV493_0_COMPONENT_NAME TLV493_0
-#define TLV493_0_BASE 0x40000
-#define TLV493_0_SPAN 262144
-#define TLV493_0_END 0x7ffff
+#define TLV_2_COMPONENT_TYPE TLV493
+#define TLV_2_COMPONENT_NAME TLV_2
+#define TLV_2_BASE 0x40000
+#define TLV_2_SPAN 262144
+#define TLV_2_END 0x7ffff
+
+/*
+ * Macros for device 'TLV_1', class 'TLV493'
+ * The macros are prefixed with 'TLV_1_'.
+ * The prefix is the slave descriptor.
+ */
+#define TLV_1_COMPONENT_TYPE TLV493
+#define TLV_1_COMPONENT_NAME TLV_1
+#define TLV_1_BASE 0x80000
+#define TLV_1_SPAN 262144
+#define TLV_1_END 0xbffff
+
+/*
+ * Macros for device 'TLV_0', class 'TLV493'
+ * The macros are prefixed with 'TLV_0_'.
+ * The prefix is the slave descriptor.
+ */
+#define TLV_0_COMPONENT_TYPE TLV493
+#define TLV_0_COMPONENT_NAME TLV_0
+#define TLV_0_BASE 0xc0000
+#define TLV_0_SPAN 262144
+#define TLV_0_END 0xfffff
+
+/*
+ * Macros for device 'MSJPlatformController_0', class 'MSJPlatformController'
+ * The macros are prefixed with 'MSJPLATFORMCONTROLLER_0_'.
+ * The prefix is the slave descriptor.
+ */
+#define MSJPLATFORMCONTROLLER_0_COMPONENT_TYPE MSJPlatformController
+#define MSJPLATFORMCONTROLLER_0_COMPONENT_NAME MSJPlatformController_0
+#define MSJPLATFORMCONTROLLER_0_BASE 0x100000
+#define MSJPLATFORMCONTROLLER_0_SPAN 262144
+#define MSJPLATFORMCONTROLLER_0_END 0x13ffff
 
 
 #endif /* _ALTERA_HPS_0_H_ */

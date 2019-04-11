@@ -89,6 +89,7 @@
 #include <roboy_middleware_msgs/MagneticSensor.h>
 #include <roboy_middleware_msgs/MotorStatus.h>
 #include <roboy_middleware_msgs/MotorCommand.h>
+#include <roboy_middleware_msgs/ControlMode.h>
 #include <std_msgs/Int32.h>
 #include <std_srvs/SetBool.h>
 #include <std_srvs/Empty.h>
@@ -120,6 +121,8 @@ public:
     bool setControllerParameters( roboy_control_msgs::SetControllerParameters::Request &req,
                                                roboy_control_msgs::SetControllerParameters::Response &res);
     void MotorCommand(const roboy_middleware_msgs::MotorCommandConstPtr &msg);
+    bool ControlModeService(roboy_middleware_msgs::ControlMode::Request &req,
+                            roboy_middleware_msgs::ControlMode::Response &res);
     bool EmergencyStop(std_srvs::SetBool::Request &req, std_srvs::SetBool::Response &res);
     bool Zero(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res);
 /**

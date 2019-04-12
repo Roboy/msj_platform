@@ -210,6 +210,31 @@ void MSJPlatform::MotorCommand(const roboy_middleware_msgs::MotorCommandConstPtr
     ROS_INFO_STREAM_THROTTLE(1,str.str());
 }
 
+bool MSJPlatform::ControlModeService(roboy_middleware_msgs::ControlMode::Request &req,
+                                     roboy_middleware_msgs::ControlMode::Response &res) {
+    if(req.motor_id.empty()) {
+        switch (req.control_mode) {
+            case POSITION:
+                ROS_INFO("switch to POSITION control");
+                for(int i=0;i<NUMBER_OF_MOTORS;i++)
+                    control_mode[i] = req.control_mode;
+                break;
+            case VELOCITY:
+                ROS_INFO("switch to VELOCITY control");
+                for(int i=0;i<NUMBER_OF_MOTORS;i++)
+                    control_mode[i] = req.control_mode;
+                break;
+            default:
+                return false;
+        }
+    }else{
+        for(int motor:req.motor_id){
+            control_mode[motor] = req.control_mode;
+        }
+    }
+    return true;
+}
+
 bool MSJPlatform::EmergencyStop(std_srvs::SetBool::Request &req, std_srvs::SetBool::Response &res){
     if(req.data==1){
         MSJ_WRITE_pwm_mute(msj_platform_base,true);

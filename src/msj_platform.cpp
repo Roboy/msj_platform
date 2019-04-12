@@ -26,38 +26,44 @@ MSJPlatform::MSJPlatform(int32_t *msj_platform_base, int32_t *switch_base, vecto
     spinner.reset(new ros::AsyncSpinner(0));
     spinner->start();
 
-    for(int i=0;i<NUMBER_OF_MOTORS;i++){
-        MSJ_WRITE_zero_speed(msj_platform_base,i,zero_speed[i]);
-        MSJ_WRITE_outputPosMax(msj_platform_base,i,(zero_speed[i]+20));
-        MSJ_WRITE_outputNegMax(msj_platform_base,i,(zero_speed[i]-20));
+    if(msj_platform_base!=nullptr) {
+        for (int i = 0; i < NUMBER_OF_MOTORS; i++) {
+            MSJ_WRITE_zero_speed(msj_platform_base, i, zero_speed[i]);
+            MSJ_WRITE_outputPosMax(msj_platform_base, i, (zero_speed[i] + 20));
+            MSJ_WRITE_outputNegMax(msj_platform_base, i, (zero_speed[i] - 20));
 
-        MSJ_WRITE_Kp(msj_platform_base,i,1);
-        MSJ_WRITE_Ki(msj_platform_base,i,0);
-        MSJ_WRITE_integralPosMax(msj_platform_base,i,0);
-        MSJ_WRITE_integralNegMax(msj_platform_base,i,0);
-        MSJ_WRITE_Kd(msj_platform_base,i,0);
+            MSJ_WRITE_Kp(msj_platform_base, i, 1);
+            MSJ_WRITE_Ki(msj_platform_base, i, 0);
+            MSJ_WRITE_integralPosMax(msj_platform_base, i, 0);
+            MSJ_WRITE_integralNegMax(msj_platform_base, i, 0);
+            MSJ_WRITE_Kd(msj_platform_base, i, 0);
 
-        MSJ_WRITE_outputDivider(msj_platform_base,i,40);
-        MSJ_WRITE_deadBand(msj_platform_base,i,0);
-        MSJ_WRITE_control_mode(msj_platform_base,i,2);// direct feed through to pwm
-        MSJ_WRITE_sp(msj_platform_base,i,zero_speed[i]);
-        control_mode[i] = POSITION;
+            MSJ_WRITE_outputDivider(msj_platform_base, i, 40);
+            MSJ_WRITE_deadBand(msj_platform_base, i, 0);
+            MSJ_WRITE_control_mode(msj_platform_base, i, 2);// direct feed through to pwm
+            MSJ_WRITE_sp(msj_platform_base, i, zero_speed[i]);
+            control_mode[i] = POSITION;
+        }
+        MSJ_WRITE_sensor_update_freq(msj_platform_base, 1000);
+        MSJ_WRITE_pwm_mute(msj_platform_base, false);
+
+        status_thread = boost::shared_ptr<std::thread>(new std::thread(&MSJPlatform::publishStatus, this));
+        status_thread->detach();
+
+        pid_control_thread = boost::shared_ptr<std::thread>(new std::thread(&MSJPlatform::PIDController, this));
+        pid_control_thread->detach();
     }
-    MSJ_WRITE_sensor_update_freq(msj_platform_base, 1000);
-    MSJ_WRITE_pwm_mute(msj_platform_base,false);
 
-    status_thread = boost::shared_ptr<std::thread>( new std::thread(&MSJPlatform::publishStatus, this));
-    status_thread->detach();
-
-    for(int i=0;i<tlv_base.size();i++){
-        tlv.push_back(boost::shared_ptr<TLV493D_FPGA>(new TLV493D_FPGA(tlv_base[i])));
+//    for(int i=0;i<tlv_base.size();i++){
+//        tlv.push_back(boost::shared_ptr<TLV493D_FPGA>(new TLV493D_FPGA(tlv_base[i])));
+//    }
+    for(int i=0;i<3;i++){
+        tlv.push_back(boost::shared_ptr<TLV493D>(new TLV493D(i2c_base[i])));
     }
 
     magnetic_thread = boost::shared_ptr<std::thread>( new std::thread(&MSJPlatform::publishMagneticSensors, this));
     magnetic_thread->detach();
 
-    pid_control_thread = boost::shared_ptr<std::thread>( new std::thread(&MSJPlatform::PIDController, this));
-    pid_control_thread->detach();
 
     //TODO: add PID controller parameters service
 
@@ -190,18 +196,18 @@ void MSJPlatform::MotorCommand(const roboy_middleware_msgs::MotorCommandConstPtr
         ROS_INFO_THROTTLE(60,"receiving motor commands, but they are not for me (id=5)");
         return;
     }
-//    stringstream str;
+    stringstream str;
     for(int i=0;i<msg->motors.size();i++) {
-        if(control_mode[i]!=2) {
+        if(control_mode[i]!=POSITION) {
 //        MSJ_WRITE_control_mode(msj_platform_base, msg->motors[i], 2);
             MSJ_WRITE_sp(msj_platform_base, msg->motors[i], (int) msg->set_points[i]);
 //        ROS_INFO_STREAM("motor " << msg->motors[i] << " " << msg->set_points[i]);
         }else{
             sp[msg->motors[i]] = (int) msg->set_points[i];
-//            str << sp[msg->motors[i]] << "\t";
+            str << sp[msg->motors[i]] << "\t";
         }
     }
-//    ROS_INFO_STREAM_THROTTLE(1,str.str());
+    ROS_INFO_STREAM_THROTTLE(1,str.str());
 }
 
 bool MSJPlatform::EmergencyStop(std_srvs::SetBool::Request &req, std_srvs::SetBool::Response &res){
@@ -422,6 +428,14 @@ int main(int argc, char *argv[]) {
         close( fd );
         return( 1 );
     }
+
+#ifdef SYSID_QSYS_BASE
+    int32_t *sys_id = (int32_t*)(virtual_base + ( ( unsigned long  )( ALT_LWFPGASLVS_OFST + SYSID_QSYS_BASE ) & ( unsigned long)( HW_REGS_MASK )) );
+    if((*sys_id)!=(int32_t)SYSID_QSYS_ID){
+        ROS_FATAL("oh oh, the system id %d of the fpga does not match our hps_0.h %d, you should probably regenerate your header", (*sys_id), SYSID_QSYS_ID);
+    }
+#endif
+
 #ifdef LED_BASE
     h2p_lw_led_addr = (int32_t*)(virtual_base + ( ( unsigned long  )( ALT_LWFPGASLVS_OFST + LED_BASE ) & ( unsigned long)( HW_REGS_MASK )) );
 #else
@@ -445,6 +459,21 @@ int main(int argc, char *argv[]) {
 #endif
 #ifdef I2C_2_BASE
     h2p_lw_i2c.push_back((int32_t*)(virtual_base + ( ( unsigned long  )( ALT_LWFPGASLVS_OFST + I2C_2_BASE ) & ( unsigned long)( HW_REGS_MASK )) ));
+#endif
+#ifdef I2C_3_BASE
+    h2p_lw_i2c.push_back((int32_t*)(virtual_base + ( ( unsigned long  )( ALT_LWFPGASLVS_OFST + I2C_3_BASE ) & ( unsigned long)( HW_REGS_MASK )) ));
+#endif
+#ifdef I2C_4_BASE
+    h2p_lw_i2c.push_back((int32_t*)(virtual_base + ( ( unsigned long  )( ALT_LWFPGASLVS_OFST + I2C_4_BASE ) & ( unsigned long)( HW_REGS_MASK )) ));
+#endif
+#ifdef I2C_5_BASE
+    h2p_lw_i2c.push_back((int32_t*)(virtual_base + ( ( unsigned long  )( ALT_LWFPGASLVS_OFST + I2C_5_BASE ) & ( unsigned long)( HW_REGS_MASK )) ));
+#endif
+#ifdef I2C_6_BASE
+    h2p_lw_i2c.push_back((int32_t*)(virtual_base + ( ( unsigned long  )( ALT_LWFPGASLVS_OFST + I2C_6_BASE ) & ( unsigned long)( HW_REGS_MASK )) ));
+#endif
+#ifdef I2C_7_BASE
+    h2p_lw_i2c.push_back((int32_t*)(virtual_base + ( ( unsigned long  )( ALT_LWFPGASLVS_OFST + I2C_7_BASE ) & ( unsigned long)( HW_REGS_MASK )) ));
 #endif
 #ifdef DARKROOM_0_BASE
     h2p_lw_darkroom = (int32_t*)(virtual_base + ( ( unsigned long  )( ALT_LWFPGASLVS_OFST + DARKROOM_0_BASE ) & ( unsigned long)( HW_REGS_MASK )) );

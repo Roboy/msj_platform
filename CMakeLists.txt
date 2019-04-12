@@ -66,7 +66,7 @@ if (DEFINED "ENV{SOCEDS_DEST_ROOT}")
     add_executable( msj_platform_fpga
             src/msj_platform.cpp
             src/i2c.cpp
-            src/tlv493d_fpga.cpp
+            src/tlv493d.cpp
             src/CRC32.cpp
             include/msj_platform/msj_platform.hpp
             )

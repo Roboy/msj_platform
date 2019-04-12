@@ -1,7 +1,8 @@
 #include "msj_platform/tlv493d_fpga.hpp"
 
 TLV493D_FPGA::TLV493D_FPGA(int32_t *tlv_base):tlv_base(tlv_base){
-
+//    // reset sensor
+//    IOWR(tlv_base,0,1);
 }
 
 TLV493D_FPGA::~TLV493D_FPGA() {
@@ -27,6 +28,12 @@ bool TLV493D_FPGA::read(float &fx, float &fy, float &fz){
     x = IORD(tlv_base, (0<<8));
     y = IORD(tlv_base, (1<<8));
     z = IORD(tlv_base, (2<<8));
+    if(IORD(tlv_base, (5<<8))){ // ack error
+        fx = 0;
+        fy = 0;
+        fz = 0;
+        return false;
+    }
 
     fx = convertToMilliTesla(x);
     fy = convertToMilliTesla(y);

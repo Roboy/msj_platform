@@ -103,10 +103,10 @@ bool TLV493D::read(float &fx, float &fy, float &fz){
         ROS_WARN_THROTTLE(5,"oh oh frame counter incorrect, attemptimg to reset tlv sensor");
         success = false;
     }
-    if((data[3]&0x3)!=0){
-        ROS_WARN_THROTTLE(1,"sensor values not ready yet");
-        success = false;
-    }
+//    if((data[3]&0x3)!=0){
+//        ROS_WARN_THROTTLE(1,"sensor values not ready yet");
+//        success = false;
+//    }
     if(!success)
         return false;
     fx = convertToMilliTesla(data[0], (uint8_t)(data[4]>>4));

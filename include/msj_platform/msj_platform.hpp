@@ -94,7 +94,7 @@
 #include <std_srvs/Empty.h>
 #include <thread>
 #include <vector>
-#include "msj_platform/tlv493d_fpga.hpp"
+#include "msj_platform/tlv493d.hpp"
 #include "msj_platform/half.hpp"
 #include "msj_platform/CRC32.h"
 #include <common_utilities/CommonDefinitions.h>
@@ -164,7 +164,7 @@ private:
     int32_t *msj_platform_base, *switch_base, *darkroom_base, *darkroom_ootx_base;
     boost::shared_ptr<std::thread> status_thread, magnetic_thread, pid_control_thread, darkroom_thread, darkroom_ootx_thread;
     vector<int32_t> zero_speed = {333,333,330,328,330,330,330,330};
-    vector<boost::shared_ptr<TLV493D_FPGA>> tlv;
+    vector<boost::shared_ptr<TLV493D>> tlv;
     vector<int32_t*> i2c_base, tlv_base;
     int control_mode[NUMBER_OF_MOTORS] = {2};
     int sp[NUMBER_OF_MOTORS] = {0};

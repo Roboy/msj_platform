@@ -53,18 +53,11 @@ bool TLV493D::checkParity(uint32_t v){
 }
 
 float TLV493D::convertToMilliTesla(uint8_t MSB, uint8_t LSB) {
-    uint16_t data = (MSB<<4|(LSB&0xF));
-    int val = 0;
-    for(int i=11;i>=0;i--){
-        if(i==11){
-            if((data>>i)&0x1)
-                val = -2048;
-        }else{
-            if((data>>i)&0x1)
-                val += (1<<i);
-        }
-    }
-    return val*0.098;
+    int16_t value;
+    value=MSB<<8;
+    value|=(LSB&0x0F)<<4;
+    value>>=4;
+    return value;
 }
 
 float TLV493D::convertToMilliTesla(uint32_t data) {
@@ -112,5 +105,17 @@ bool TLV493D::read(float &fx, float &fy, float &fz){
     fx = convertToMilliTesla(data[0], (uint8_t)(data[4]>>4));
     fy = convertToMilliTesla(data[1], (uint8_t)(data[4]&0xF));
     fz = convertToMilliTesla(data[2], (uint8_t)(data[5]&0xF));
+    return true;
+}
+
+bool TLV493D::readRaw(uint8_t &fx_MSB, uint8_t &fy_MSB, uint8_t &fz_MSB, uint8_t &fx_LSB, uint8_t &fy_LSB, uint8_t &fz_LSB){
+    vector<uint8_t> data;
+    i2c->read_continuous(0x5e,7, data);
+    fx_MSB = data[0];
+    fy_MSB = data[1];
+    fz_MSB = data[2];
+    fx_LSB = data[4]>>4;
+    fy_LSB = data[4]&0xF;
+    fz_LSB = data[5]&0xF;
     return true;
 }

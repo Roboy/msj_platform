@@ -143,6 +143,9 @@ void MSJPlatform::publishMagneticSensors() {
             msg.x.push_back(fx);
             msg.y.push_back(fy);
             msg.z.push_back(fz);
+//            uint8_t fx_MSB,fy_MSB,fz_MSB,fx_LSB,fy_LSB,fz_LSB;
+//            tlv[i]->readRaw(fx_MSB,fy_MSB,fz_MSB,fx_LSB,fy_LSB,fz_LSB);
+//            ROS_INFO_THROTTLE(0.5,"%d %d %d %d %d %d",fx_MSB,fy_MSB,fz_MSB,fx_LSB,fy_LSB,fz_LSB);
         }
         magnetic_sensor.publish(msg);
         rate.sleep();

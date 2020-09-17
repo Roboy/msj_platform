@@ -28,7 +28,6 @@ if (DEFINED "ENV{SOCEDS_DEST_ROOT}")
             roboy_middleware_msgs
             roboy_control_msgs
             common_utilities
-            roboy_soli
             )
     include(findros)
     # Eigen
